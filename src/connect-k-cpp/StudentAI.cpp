@@ -9,10 +9,11 @@ using namespace std;
 #define WINNER 9999
 #define MYAI 2
 #define OPPONENT 1
+#define Action pair<Move, int> 
+#define vvi vector<vector<int> >
 int moveCnt = 0;
 clock_t TIMER;
 
-// Board myBoard;
 //The following part should be completed by students.
 //The students can modify anything except the class name and exisiting functions and varibles.
 StudentAI::StudentAI(int col,int row,int k,int g):AI(col, row, k, g) {
@@ -22,8 +23,9 @@ StudentAI::StudentAI(int col,int row,int k,int g):AI(col, row, k, g) {
 
 Move StudentAI::GetMove(Move move) {
   moveCnt++;
-  myBoard = myBoard.MakeMove(move, OPPONENT);
+  if(move.col + move.row >= 0) myBoard = myBoard.MakeMove(move, OPPONENT);
   if(moveCnt == 1) {
+    // Start from the center of the board as much as possible
     if(myBoard.board[col/2][row/2] == 0){
       myBoard = myBoard.MakeMove(Move(col/2, row/2), MYAI);
       return Move(col/2, row/2);
@@ -39,13 +41,9 @@ Move StudentAI::GetMove(Move move) {
     }
   } else {
     TIMER = clock();
-    // Run IterativeDeepeningSearch
+    // Run Iterative Deepening Search
     for(int depth=1; depth<MAXDEPTH; depth++) {
-      // Move nxt = IDS(depth, myBoard.board, MYAI, INT_MIN, INT_MAX);
-      pair<Move, int> action = IDS(depth, myBoard.board, MYAI, INT_MIN, INT_MAX);
-      // printf("nxt.col = %d, nxt.row = %d, nxt.score = %d\n", nxt.col, nxt.row, nxt.score);
-      
-      // if(nxt.score != 0) {
+      Action action = IDS(depth, myBoard.board, MYAI, INT_MIN, INT_MAX);
       if(action.second != 0) {
         myBoard = myBoard.MakeMove(action.first, MYAI);
         return action.first;
@@ -54,59 +52,39 @@ Move StudentAI::GetMove(Move move) {
   }
 }
 
-// Move StudentAI::IDS(int depth, vector<vector<int> >& board, int cPlayer, int ALPHA, int BETA) {
-pair<Move,int> StudentAI::IDS(int depth, vector<vector<int> >& board, int cPlayer, int ALPHA, int BETA) {
-
-  // Move m = miniMax(depth, board, cPlayer, ALPHA, BETA);
-  pair<Move,int> action = miniMax(depth, board, cPlayer, ALPHA, BETA);
-  // if(m.score >= WINNER || m.score == -1 || timeout()) return m;
-  if(action.second >= WINNER || action.second == -1 || timeout()) return m;
+Action StudentAI::IDS(int depth, vvi& board, int cPlayer, int ALPHA, int BETA) {
+  Action action = miniMax(depth, board, cPlayer, ALPHA, BETA);
+  if(action.second >= WINNER || action.second == -1 || timeout()) 
+    return action;
   if(depth>0) {
-    // Move m2 = IDS(depth-1, board, cPlayer, ALPHA, BETA);
-    pair<Move,int> action2 = IDS(depth-1, board, cPlayer, ALPHA, BETA);
-    // if(m2.score) return m2;
+    Action action2 = IDS(depth-1, board, cPlayer, ALPHA, BETA);
     if(action2.second) return action2;
   }
-  // m.score = 0;
   action.second = 0;
   return action;
 }
 
-// Move StudentAI::miniMax(int depth, vector<vector<int> >& board, int cPlayer, int ALPHA, int BETA) {
-pair<Move,int> StudentAI::miniMax(int depth, vector<vector<int> >& board, int cPlayer, int ALPHA, int BETA) {
-  // vector<Move> mv = availableMoves(board);
-  vector<pair<Move,int> > mv = availableMoves(board);
-  pair<Move,int> bestMv;
+Action StudentAI::miniMax(int depth, vvi& board, int cPlayer, int ALPHA, int BETA) {
+  vector<Action > mv = availableMoves(board);
+  Action bestMv;
   // Come to the limit of the IDS or No available move can be made
   if(depth == 0 || mv.size() == 0) {
     // Move sc(heuristic(board, cPlayer));
     // return sc;
-    pair<Move,int> sc(make_pair(Move(),heuristic(board, cPlayer)));
+    Action sc(make_pair(Move(),heuristic(board, cPlayer)));
     return sc;
   } else if(cPlayer == MYAI) {
     // MyAI, pick a maximum value
     int bestVal = INT_MIN;
     for(int i=0; i<(int)mv.size(); i++) {
-      // board[mv[i].row][mv[i].col] = MYAI;
       board[mv[i].first.row][mv[i].first.col] = MYAI;
-      // Move m = miniMax(depth-1, board, OPPONENT, bestVal, BETA);
-      pair<Move,int> act = miniMax(depth-1, board, OPPONENT, bestVal, BETA);
-      // mv[i].score = m.score;
+      Action act = miniMax(depth-1, board, OPPONENT, bestVal, BETA);
       mv[i].second = act.second;
-      // board[mv[i].row][mv[i].col] = 0;
       board[mv[i].first.row][mv[i].first.col] = 0;
-      // if(m.score == -WINNER) {
-      //   m.score = WINNER;
-      //   return m;
-      // }
       if(act.second == -WINNER) {
         act.second = WINNER;
         return act;
       }
-      // if(mv[i].score > bestVal) {
-      //   bestVal = mv[i].score;
-      //   bestMv = mv[i];
-      // }
       if(mv[i].second > bestVal) {
         bestVal = mv[i].second;
         bestMv = mv[i];
@@ -119,20 +97,19 @@ pair<Move,int> StudentAI::miniMax(int depth, vector<vector<int> >& board, int cP
   } else {
     // Opponent, pick a minimum value
     int bestVal = INT_MAX;
-		vector<Move> mv = availableMoves(board);
+    vector<Action > mv = availableMoves(board);
 		for(int i=0; i<mv.size(); i++){
-			board[mv[i].row][mv[i].col] = OPPONENT;
-			mv[i].score = miniMax(depth - 1, board, MYAI, ALPHA, bestVal).score;
-			board[mv[i].row][mv[i].col] = 0;
-      //If player two receives a winning score, player one uses this move to block
-			if(mv[i].score == -WINNER){
-				bestMv = mv[i];
-				return bestMv;
-			}
-			if(mv[i].score < bestVal) {
-				bestMv = mv[i];
-				bestVal = mv[i].score;
-			}
+      board[mv[i].first.row][mv[i].first.col] = OPPONENT;
+			mv[i].second = miniMax(depth - 1, board, MYAI, ALPHA, bestVal).second;
+      board[mv[i].first.row][mv[i].first.col] = 0;
+      if(mv[i].second == -WINNER) {
+        bestMv = mv[i];
+        return bestMv;
+      }
+      if(mv[i].second < bestVal) {
+        bestMv = mv[i];
+        bestVal = mv[i].second;
+      }
 			if(bestVal < BETA) BETA = bestVal;
 			if(bestVal <= ALPHA) break;
 			if(timeout()) return bestMv;
@@ -141,13 +118,13 @@ pair<Move,int> StudentAI::miniMax(int depth, vector<vector<int> >& board, int cP
   }
 }
 
-vector<Move> StudentAI::availableMoves(vector<vector<int> >& board) {
-  vector<Move> moveVector;
+vector<Action > StudentAI::availableMoves(vvi& board) {
+  vector<Action > actVector;
   //Push the middle of the board into available moves vector first
   for(int c=(col/2)-1; c<(col/2)+(col/3); c++) {
     for(int r=row-1; r>=0; r--) {
       if(board[r][c] == 0) {
-        moveVector.push_back(Move(c, r));
+        actVector.push_back(make_pair(Move(c, r),0));
         if(g==1) break;
       }
     }
@@ -156,7 +133,7 @@ vector<Move> StudentAI::availableMoves(vector<vector<int> >& board) {
   for(int c=(col/2)+(col/3); c<col; c++) {
     for(int r=row-1; r>=0; r--) {
       if(board[r][c] == 0) {
-        moveVector.push_back(Move(c, r));
+        actVector.push_back(make_pair(Move(c, r),0));
         if(g==1) break;
       }
     }
@@ -165,15 +142,15 @@ vector<Move> StudentAI::availableMoves(vector<vector<int> >& board) {
   for(int c=(col/2)-2; c>=0; c--){
     for(int r=row-1; r>=0; r--){
       if(board[r][c] == 0) {
-        moveVector.push_back(Move(c, r));
+        actVector.push_back(make_pair(Move(c, r),0));
         if(g==1) break;        
       }
     }  
   }
-  return moveVector;
+  return actVector;
 }
 
-pair<int,int> StudentAI::verticalScore(vector<vector<int> >& board, int c, int r) {
+pair<int,int> StudentAI::verticalScore(vvi& board, int c, int r) {
   int aiCount = 0; int otherCount = 0;
 	int aiScore = 0; int otherScore = 0;
 
@@ -182,7 +159,7 @@ pair<int,int> StudentAI::verticalScore(vector<vector<int> >& board, int c, int r
 	return make_pair(aiScore, otherScore);
 }
 
-void StudentAI::scanVertical(vector<vector<int> >& board, int c, int r, int cPlayer, int& count, int& score) {
+void StudentAI::scanVertical(vvi& board, int c, int r, int cPlayer, int& count, int& score) {
   bool bottomBlocked = false, topBlocked = false;
 
 	if(board[r][c] == cPlayer){
@@ -212,7 +189,7 @@ void StudentAI::scanVertical(vector<vector<int> >& board, int c, int r, int cPla
 	}
 }
 
-pair<int,int> StudentAI::horizontalScore(vector<vector<int> >& board, int c, int r) {
+pair<int,int> StudentAI::horizontalScore(vvi& board, int c, int r) {
   int aiCount = 0; int otherCount = 0;
 	int aiScore = 0; int otherScore = 0;
 
@@ -221,7 +198,7 @@ pair<int,int> StudentAI::horizontalScore(vector<vector<int> >& board, int c, int
 	return make_pair(aiScore, otherScore);
 }
 
-void StudentAI::scanHorizontal(vector<vector<int> >& board, int c, int r, int cPlayer, int& count, int& score) {
+void StudentAI::scanHorizontal(vvi& board, int c, int r, int cPlayer, int& count, int& score) {
   bool leftBlocked = false; 
   bool rightBlocked = false;
   int tmpC = c;
@@ -254,7 +231,7 @@ void StudentAI::scanHorizontal(vector<vector<int> >& board, int c, int r, int cP
 	}
 }
 
-int StudentAI::heuristic(vector<vector<int> >& board, int cPlayer){
+int StudentAI::heuristic(vvi& board, int cPlayer){
   int aiScore = 0, aiHScore = 0, otherScore = 0, otherHScore = 0;
 	for(int c=0; c<col; c++)
 		for(int r=0; r<row; r++){
