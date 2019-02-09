@@ -231,25 +231,122 @@ void StudentAI::scanHorizontal(vvi& board, int c, int r, int cPlayer, int& count
 	}
 }
 
+pair<int,int> StudentAI::diagnalBRtoTLScore(vvi& board, int c, int r) {
+  int aiCount = 0; int otherCount = 0;
+	int aiScore = 0; int otherScore = 0;
+  scanDiagnalBRtoTL(board, c, r, MYAI, aiCount, aiScore);
+  scanDiagnalBRtoTL(board, c, r, OPPONENT, otherCount, otherScore);
+  return make_pair(aiCount, otherScore);
+}
+
+void StudentAI::scanDiagnalBRtoTL(vvi& board, int c, int r, int cPlayer, int& count, int& score) {
+  bool brBlocked = false, tlBlocked = false;
+  int tmpC = c, tmpR = r;
+  if(board[r][c] == cPlayer) {
+    while((++tmpR < row) && (++tmpC < col) && board[tmpR][tmpC] == cPlayer) ++count;
+    if(tmpR < row && tmpC < col) {
+      if(board[tmpR][tmpC]==(cPlayer%2)+1)
+        brBlocked = true;
+    } else if(tmpR == row || tmpC == col)
+      brBlocked = true;
+
+    tmpC = c, tmpR = r;
+
+    while((--tmpR >= 0) && (--tmpC >= 0) && board[tmpR][tmpC] == cPlayer) ++count;
+    if(tmpR >= 0 && tmpC >= 0) {
+      if(board[tmpR][tmpC]==(cPlayer%2)+1)
+        tlBlocked = true;
+    } else if(tmpR == row || tmpC == col)
+      tlBlocked = true;
+    
+    if(count >= k) {
+      score = WINNER;
+      return;
+    }
+    if(brBlocked && tlBlocked){
+      score = 0;
+      return;
+    }
+    evaluate(count, score);
+  }
+}
+
+pair<int,int> StudentAI::diagnalBLtoTRScore(vvi& board, int c, int r) {
+  int aiCount = 0; int otherCount = 0;
+	int aiScore = 0; int otherScore = 0;
+  scanDiagnalBLtoTR(board, c, r, MYAI, aiCount, aiScore);
+  scanDiagnalBLtoTR(board, c, r, OPPONENT, otherCount, otherScore);
+  return make_pair(aiCount, otherScore);
+}
+
+void StudentAI::scanDiagnalBLtoTR(vvi& board, int c, int r, int cPlayer, int& count, int& score) {
+  bool blBlocked = false, trBlocked = false;
+  int tmpC = c, tmpR = r;
+  if(board[r][c] == cPlayer) {
+    while((--tmpR >= 0) && (++tmpC < col) && board[tmpR][tmpC] == cPlayer) ++count;
+    if(tmpR >= 0 && tmpC < col) {
+      if(board[tmpR][tmpC]==(cPlayer%2)+1)
+        trBlocked = true;
+    } else if(tmpR == row || tmpC == col)
+      trBlocked = true;
+
+    tmpC = c, tmpR = r;
+
+    while((++tmpR < row) && (--tmpC >= 0) && board[tmpR][tmpC] == cPlayer) ++count;
+    if(tmpR < row && tmpC >= 0) {
+      if(board[tmpR][tmpC]==(cPlayer%2)+1)
+        blBlocked = true;
+    } else if(tmpR == row || tmpC == col)
+      blBlocked = true;
+    
+    if(count >= k) {
+      score = WINNER;
+      return;
+    }
+    if(blBlocked && trBlocked){
+      score = 0;
+      return;
+    }
+    evaluate(count, score);
+  }
+}
+
 int StudentAI::heuristic(vvi& board, int cPlayer){
   int aiScore = 0, aiHScore = 0, otherScore = 0, otherHScore = 0;
 	for(int c=0; c<col; c++)
 		for(int r=0; r<row; r++){
-			//vertical Win count
-      pair<int,int> piiv = verticalScore(board,c,r);
-			int vertScore = piiv.first;
-			int otherScore = piiv.second;
+      pair<int,int> score;
+			//vertical
+      score = verticalScore(board,c,r);
+			int vertScore = score.first;
+			int otherScore = score.second;
 			if(otherScore>=WINNER) return -WINNER;
 			if(vertScore>=WINNER) return WINNER;
 			aiScore += vertScore;
 			
-			//horizontal wins count
-      pair<int,int> piih = horizontalScore(board,c,r);
-			int horizScore = piih.first;
-			otherScore = piih.second;
+			//horizontal
+      score = horizontalScore(board,c,r);
+			int horizScore = score.first;
+			otherScore = score.second;
 			if(otherScore>=WINNER) return -WINNER;
 			if(horizScore>=WINNER) return WINNER;
 			aiScore += horizScore;
+
+      //bottom-left to top-right
+      score = diagnalBLtoTRScore(board,c,r);
+			int BLtoTRScore = score.first;
+			otherScore = score.second;
+			if(otherScore>=WINNER) return -WINNER;
+			if(BLtoTRScore>=WINNER) return WINNER;
+			aiScore += BLtoTRScore;
+
+      // bottom-right to top-left
+      score = diagnalBRtoTLScore(board,c,r);
+			int BRtoTLScore = score.first;
+			otherScore = score.second;
+			if(otherScore>=WINNER) return -WINNER;
+			if(BLtoTRScore>=WINNER) return WINNER;
+			aiScore += BRtoTLScore;
 		}	 	
 		return aiScore;
 }

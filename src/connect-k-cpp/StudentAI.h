@@ -20,13 +20,13 @@ public:
 
   int heuristic(vector<vector<int> >& board, int);
   pair<int,int> diagnalBRtoTLScore(vector<vector<int> >& board, int col, int row);
-  void scanDiagnalBRtoTL();
+  void scanDiagnalBRtoTL(vector<vector<int> >& board , int col, int row, int cPlayer, int& count, int& score);
   pair<int,int> diagnalBLtoTRScore(vector<vector<int> >& board, int col, int row);
-  void scandDiagnalBLtoTR();
+  void scanDiagnalBLtoTR(vector<vector<int> >& board , int col, int row, int cPlayer, int& count, int& score);
   pair<int,int> horizontalScore(vector<vector<int> >& board, int col, int row);
-  void scanHorizontal(vector<vector<int> >& board , int c, int r, int cPlayer, int& count, int& score);
+  void scanHorizontal(vector<vector<int> >& board , int col, int row, int cPlayer, int& count, int& score);
   pair<int,int> verticalScore(vector<vector<int> >& board, int col, int row);
-  void scanVertical(vector<vector<int> >& board, int c, int r, int cPlayer, int& count, int& score);
+  void scanVertical(vector<vector<int> >& board, int col, int row, int cPlayer, int& count, int& score);
   void evaluate(int, int&);
   bool timeout();
 };
