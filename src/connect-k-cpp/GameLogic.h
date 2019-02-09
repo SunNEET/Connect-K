@@ -10,7 +10,7 @@
 class GameLogic
 {
 private:
-	int col, row, k,g; 
+	int col, row, k, g; 
 	string mode;
 	bool debug;
 	vector<AI*> aiList;

@@ -1,6 +1,5 @@
 #include "Board.h"
 
-
 Board::Board()
 {
 	this->col = 0;
@@ -8,6 +7,7 @@ Board::Board()
 	this->k = 0;
 	this->g = 0;
 }
+
 Board::Board(int col, int row,int k, int g)
 {
 	this->col = col;
@@ -27,7 +27,6 @@ Board::Board(int col, int row,int k, int g)
 			this->board[i][j] = 0;
 		}
 	}
-		
 }
 
 Board::Board(const Board& b)
